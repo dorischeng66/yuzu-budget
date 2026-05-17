@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>柚子記帳本</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --blue:#4FC3F7;--blue-light:#E1F5FE;--blue-dark:#0277BD;
+    --blue-mid:#29B6F6;--blue-border:#B3E5FC;
+    --amber:#FFB74D;--amber-light:#FFF3E0;
+    --purple:#B39DDB;--purple-light:#EDE7F6;
+    --teal:#4DB6AC;--teal-light:#E0F2F1;
+    --green:#81C784;--green-light:#E8F5E9;
+    --coral:#FF8A65;--coral-light:#FBE9E7;
+    --gray:#B0BEC5;--gray-light:#ECEFF1;
+    --bg:#F0F8FF;
+    --card:#FFFFFF;
+    --text:#1A3A4A;
+    --text2:#4A6B7A;
+    --text3:#90B4C0;
+    --radius:16px;
+    --radius-sm:10px;
+  }
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  .app{max-width:480px;margin:0 auto;padding:16px}
+
+  /* header */
+  .header{text-align:center;padding:20px 0 12px;position:relative}
+  .header h1{font-size:22px;font-weight:700;color:var(--blue-dark)}
+  .header p{font-size:13px;color:var(--text2);margin-top:4px}
+  .header-deco{font-size:28px;display:block;margin-bottom:4px}
+
+  /* metrics */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .metric{background:var(--card);border-radius:var(--radius-sm);padding:12px 8px;text-align:center;border:1.5px solid var(--blue-border)}
+  .metric-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .metric-value{font-size:18px;font-weight:700}
+
+  /* tabs */
+  .tab-bar{display:flex;gap:6px;margin-bottom:16px;background:var(--blue-border);border-radius:var(--radius);padding:5px}
+  .tab{flex:1;padding:8px 4px;border:none;background:transparent;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;color:var(--blue-dark);font-family:'Nunito',sans-serif;transition:all .15s}
+  .tab.active{background:#fff;color:var(--blue-dark);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+  /* sections */
+  .section{display:none}.section.active{display:block}
+
+  /* add form */
+  .form-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;border:1.5px solid var(--blue-border)}
+  .type-toggle{display:flex;gap:6px;margin-bottom:14px}
+  .type-btn{flex:1;padding:9px;border:1.5px solid #eee;background:#fafafa;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;color:var(--text2)}
+  .type-btn.expense.active{background:#E1F5FE;border-color:var(--blue);color:var(--blue-dark)}
+  .type-btn.income.active{background:#E8F5E9;border-color:#66BB6A;color:#2E7D32}
+  .input-row{display:flex;gap:8px;margin-bottom:12px}
+  .input-row input{flex:1;padding:10px 12px;border:1.5px solid var(--blue-border);border-radius:var(--radius-sm);font-size:14px;font-family:'Nunito',sans-serif;background:#fff;color:var(--text);outline:none}
+  .input-row input:focus{border-color:var(--blue)}
+  .input-row input.amount{max-width:120px}
+
+  /* category grid */
+  .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .cat-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1.5px solid #eee;border-radius:var(--radius-sm);background:#fafafa;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif}
+  .cat-btn:hover{background:#f0f8ff}
+  .cat-btn.selected{border-color:var(--blue);background:#E1F5FE}
+  .cat-btn svg{width:38px;height:38px;flex-shrink:0}
+  .cat-btn span{font-size:11px;font-weight:700;color:var(--text2);line-height:1}
+
+  /* submit */
+  .submit-btn{width:100%;padding:12px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;letter-spacing:.3px}
+  .submit-btn:active{transform:scale(.98)}
+  .submit-btn.expense{background:linear-gradient(135deg,#4FC3F7,#0288D1);color:#fff}
+  .submit-btn.income{background:linear-gradient(135deg,#81C784,#43A047);color:#fff}
+
+  /* transaction list */
+  .month-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .month-bar select{padding:7px 10px;border:1.5px solid var(--blue-border);border-radius:var(--radius-sm);font-size:13px;font-family:'Nunito',sans-serif;background:#fff;color:var(--text);outline:none;font-weight:700}
+  .tx-list{display:flex;flex-direction:column;gap:8px}
+  .tx-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--card);border:1.5px solid var(--blue-border);border-radius:var(--radius-sm)}
+  .tx-icon{width:40px;height:40px;flex-shrink:0}
+  .tx-icon svg{width:40px;height:40px}
+  .tx-info{flex:1;min-width:0}
+  .tx-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-meta{font-size:11px;color:var(--text3);margin-top:2px}
+  .tx-amount{font-size:15px;font-weight:700;flex-shrink:0}
+  .tx-del{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:4px;margin-left:2px;font-family:'Nunito',sans-serif;line-height:1}
+  .empty{text-align:center;color:var(--text3);font-size:14px;padding:2.5rem 0;font-weight:700}
+
+  /* charts */
+  .chart-card{background:var(--card);border:1.5px solid #FFE4EC;border-radius:var(--radius);padding:16px;margin-bottom:14px}
+  .chart-title{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;font-weight:700;color:var(--text2)}
+  .legend-item{display:flex;align-items:center;gap:5px}
+  .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span class="header-deco">🐹🐰</span>
+    <h1>柚子記帳本</h1>
+    <p>今天也要好好管理零用錢喔！</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">本月收入</div>
+      <div class="metric-value" id="m-income" style="color:#43A047">$0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">本月支出</div>
+      <div class="metric-value" id="m-expense" style="color:#0288D1">$0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">結餘</div>
+      <div class="metric-value" id="m-balance">$0</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('add')">✏️ 記帳</button>
+    <button class="tab" onclick="switchTab('list')">📋 明細</button>
+    <button class="tab" onclick="switchTab('stats')">📊 統計</button>
+  </div>
+
+  <div class="section active" id="sec-add">
+    <div class="form-card">
+      <div class="type-toggle">
+        <button class="type-btn expense active" id="btn-expense" onclick="setType('expense')">🐹 支出</button>
+        <button class="type-btn income" id="btn-income" onclick="setType('income')">🐰 收入</button>
+      </div>
+      <div class="input-row">
+        <input type="number" id="inp-amount" placeholder="金額" min="0" step="1" class="amount">
+        <input type="text" id="inp-desc" placeholder="備註（例：喝珍奶）">
+      </div>
+      <div class="cat-grid" id="cat-grid"></div>
+      <button class="submit-btn expense" id="submit-btn" onclick="addTx()">記下這筆支出 🐹</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-list">
+    <div class="month-bar">
+      <select id="list-month" onchange="renderList()"></select>
+    </div>
+    <div class="tx-list" id="tx-list"></div>
+  </div>
+
+  <div class="section" id="sec-stats">
+    <div class="month-bar">
+      <select id="stats-month" onchange="renderStats()"></select>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">各類支出佔比</div>
+      <div style="position:relative;height:220px"><canvas id="pie-chart" role="img" aria-label="各類支出圓餅圖">本月各類別支出分布。</canvas></div>
+      <div class="legend" id="pie-legend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">近6個月收支趨勢</div>
+      <div style="position:relative;height:200px"><canvas id="bar-chart" role="img" aria-label="近6個月長條圖">近6個月收入與支出趨勢。</canvas></div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#81C784"></span>收入</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#4FC3F7"></span>支出</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── SVG stickers ──────────────────────────────────────────────
+const SVGS = {
+  food:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#FFF3E0" stroke="#FFB74D" stroke-width="1.2"/>
+    <ellipse cx="14" cy="18" rx="4" ry="5" fill="#FFE0B2" stroke="#FFB74D" stroke-width="1"/>
+    <ellipse cx="26" cy="18" rx="4" ry="5" fill="#FFE0B2" stroke="#FFB74D" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="8" ry="7" fill="#fff" stroke="#FFB74D" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#FFCCBC"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#FFB74D" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#FFCCBC"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#FFCCBC"/>
+  </svg>`,
+  transport:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#E3F2FD" stroke="#64B5F6" stroke-width="1.2"/>
+    <ellipse cx="16" cy="16" rx="5" ry="6" fill="#BBDEFB" stroke="#64B5F6" stroke-width="1"/>
+    <ellipse cx="27" cy="16" rx="3.5" ry="5" fill="#BBDEFB" stroke="#64B5F6" stroke-width="1"/>
+    <ellipse cx="20" cy="23" rx="9" ry="7" fill="#fff" stroke="#64B5F6" stroke-width="1.2"/>
+    <circle cx="17" cy="22" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="22" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="25" rx="1.8" ry="0.9" fill="#BBDEFB"/>
+    <path d="M16 27 Q20 30 24 27" stroke="#64B5F6" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="15" cy="25" r="1.5" fill="#BBDEFB"/>
+    <circle cx="25" cy="25" r="1.5" fill="#BBDEFB"/>
+  </svg>`,
+  study:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#EDE7F6" stroke="#B39DDB" stroke-width="1.2"/>
+    <ellipse cx="15" cy="15" rx="4.5" ry="5.5" fill="#D1C4E9" stroke="#B39DDB" stroke-width="1"/>
+    <ellipse cx="25" cy="15" rx="4.5" ry="5.5" fill="#D1C4E9" stroke="#B39DDB" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#B39DDB" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#D1C4E9"/>
+    <path d="M16 26.5 Q20 29.5 24 26.5" stroke="#B39DDB" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#D1C4E9"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#D1C4E9"/>
+    <rect x="16" y="9" width="8" height="5" rx="1.5" fill="#B39DDB" opacity=".6"/>
+  </svg>`,
+  fun:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#FCE4EC" stroke="#FF8FAB" stroke-width="1.2"/>
+    <ellipse cx="20" cy="14" rx="9" ry="7" fill="#fff" stroke="#FF8FAB" stroke-width="1.2"/>
+    <path d="M13 10 Q15 6 20 6 Q25 6 27 10" fill="#FFCDD2" stroke="#FF8FAB" stroke-width="1"/>
+    <circle cx="17" cy="13.5" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="13.5" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="16" rx="1.8" ry="0.9" fill="#FFCDD2"/>
+    <path d="M16.5 18 Q20 21 23.5 18" stroke="#FF8FAB" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <ellipse cx="14.5" cy="16" rx="1.5" ry="1.5" fill="#FFCDD2"/>
+    <ellipse cx="25.5" cy="16" rx="1.5" ry="1.5" fill="#FFCDD2"/>
+    <rect x="13" y="22" width="14" height="10" rx="3" fill="#FFE4EC" stroke="#FF8FAB" stroke-width="1"/>
+    <circle cx="17" cy="27" r="2" fill="#FF8FAB" opacity=".5"/>
+    <rect x="20" y="25" width="2" height="4" rx="1" fill="#FF8FAB" opacity=".5"/>
+    <rect x="19" y="26" width="4" height="2" rx="1" fill="#FF8FAB" opacity=".5"/>
+  </svg>`,
+  clothes:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#E0F2F1" stroke="#4DB6AC" stroke-width="1.2"/>
+    <ellipse cx="15" cy="14" rx="4" ry="5" fill="#B2DFDB" stroke="#4DB6AC" stroke-width="1"/>
+    <ellipse cx="25" cy="14" rx="4" ry="5" fill="#B2DFDB" stroke="#4DB6AC" stroke-width="1"/>
+    <ellipse cx="20" cy="21" rx="9" ry="7" fill="#fff" stroke="#4DB6AC" stroke-width="1.2"/>
+    <circle cx="17" cy="20" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="20" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="23" rx="2" ry="1" fill="#B2DFDB"/>
+    <path d="M16 25 Q20 28 24 25" stroke="#4DB6AC" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="23" r="1.5" fill="#B2DFDB"/>
+    <circle cx="25.5" cy="23" r="1.5" fill="#B2DFDB"/>
+    <path d="M17 30 L17 36 L23 36 L23 30" stroke="#4DB6AC" stroke-width="1" fill="#E0F2F1"/>
+    <path d="M15 30 Q20 33 25 30" stroke="#4DB6AC" stroke-width="1" fill="none"/>
+  </svg>`,
+  health:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#E8F5E9" stroke="#81C784" stroke-width="1.2"/>
+    <ellipse cx="14" cy="15" rx="4" ry="5" fill="#C8E6C9" stroke="#81C784" stroke-width="1"/>
+    <ellipse cx="26" cy="15" rx="4" ry="5" fill="#C8E6C9" stroke="#81C784" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#81C784" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#C8E6C9"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#81C784" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#C8E6C9"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#C8E6C9"/>
+    <rect x="17.5" y="9" width="5" height="2" rx="1" fill="#81C784"/>
+    <rect x="19.5" y="7" width="1" height="6" rx=".5" fill="#81C784"/>
+  </svg>`,
+  gift:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#FBE9E7" stroke="#FF8A65" stroke-width="1.2"/>
+    <ellipse cx="15" cy="15" rx="4" ry="5" fill="#FFCCBC" stroke="#FF8A65" stroke-width="1"/>
+    <ellipse cx="25" cy="15" rx="4" ry="5" fill="#FFCCBC" stroke="#FF8A65" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#FF8A65" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#FFCCBC"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#FF8A65" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#FFCCBC"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#FFCCBC"/>
+    <path d="M16 9 Q16 7 20 8 Q24 7 24 9" stroke="#FF8A65" stroke-width="1" fill="none"/>
+    <circle cx="20" cy="9" r="2" fill="#FF8A65"/>
+  </svg>`,
+  other:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="1.2"/>
+    <ellipse cx="15" cy="15" rx="4" ry="5" fill="#CFD8DC" stroke="#B0BEC5" stroke-width="1"/>
+    <ellipse cx="25" cy="15" rx="4" ry="5" fill="#CFD8DC" stroke="#B0BEC5" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#B0BEC5" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#CFD8DC"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#B0BEC5" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#CFD8DC"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#CFD8DC"/>
+  </svg>`,
+  allowance:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#F3E5F5" stroke="#CE93D8" stroke-width="1.2"/>
+    <path d="M12 14 Q12 10 20 10 Q28 10 28 14 L28 30 Q28 32 20 32 Q12 32 12 30 Z" fill="#fff" stroke="#CE93D8" stroke-width="1.2"/>
+    <ellipse cx="15" cy="13" rx="3" ry="4" fill="#E1BEE7" stroke="#CE93D8" stroke-width="1"/>
+    <ellipse cx="25" cy="13" rx="3" ry="4" fill="#E1BEE7" stroke="#CE93D8" stroke-width="1"/>
+    <circle cx="17" cy="20" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="20" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="23" rx="2" ry="1" fill="#E1BEE7"/>
+    <path d="M16 25.5 Q20 28.5 24 25.5" stroke="#CE93D8" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14" cy="22.5" r="1.5" fill="#E1BEE7"/>
+    <circle cx="26" cy="22.5" r="1.5" fill="#E1BEE7"/>
+    <text x="20" y="18" text-anchor="middle" font-size="6" font-weight="700" fill="#AB47BC" font-family="Nunito,sans-serif">$</text>
+  </svg>`,
+  parttime:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#E8F5E9" stroke="#66BB6A" stroke-width="1.2"/>
+    <ellipse cx="15" cy="15" rx="4" ry="5" fill="#C8E6C9" stroke="#66BB6A" stroke-width="1"/>
+    <ellipse cx="25" cy="15" rx="4" ry="5" fill="#C8E6C9" stroke="#66BB6A" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#66BB6A" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#C8E6C9"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#66BB6A" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#C8E6C9"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#C8E6C9"/>
+    <rect x="15" y="8" width="10" height="7" rx="2" fill="#C8E6C9" stroke="#66BB6A" stroke-width="1"/>
+    <path d="M18 10 L22 10 M18 12 L21 12" stroke="#66BB6A" stroke-width="0.8" stroke-linecap="round"/>
+  </svg>`,
+  gift_money:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#FFF8E1" stroke="#FFD54F" stroke-width="1.2"/>
+    <ellipse cx="14" cy="15" rx="4" ry="5.5" fill="#FFF9C4" stroke="#FFD54F" stroke-width="1"/>
+    <ellipse cx="26" cy="15" rx="4" ry="5.5" fill="#FFF9C4" stroke="#FFD54F" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#FFD54F" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#FFF9C4"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#FFD54F" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#FFF9C4"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#FFF9C4"/>
+    <path d="M16 8 Q20 5 24 8 Q20 11 16 8Z" fill="#FFD54F" stroke="#FFA000" stroke-width="0.8"/>
+    <text x="20" y="10.5" text-anchor="middle" font-size="5" font-weight="700" fill="#E65100" font-family="Nunito,sans-serif">红包</text>
+  </svg>`,
+  other_inc:`<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="20" cy="20" r="18" fill="#ECEFF1" stroke="#90A4AE" stroke-width="1.2"/>
+    <ellipse cx="15" cy="15" rx="4" ry="5" fill="#CFD8DC" stroke="#90A4AE" stroke-width="1"/>
+    <ellipse cx="25" cy="15" rx="4" ry="5" fill="#CFD8DC" stroke="#90A4AE" stroke-width="1"/>
+    <ellipse cx="20" cy="22" rx="9" ry="7" fill="#fff" stroke="#90A4AE" stroke-width="1.2"/>
+    <circle cx="17" cy="21" r="1.2" fill="#4A3728"/>
+    <circle cx="23" cy="21" r="1.2" fill="#4A3728"/>
+    <ellipse cx="20" cy="24" rx="2" ry="1" fill="#CFD8DC"/>
+    <path d="M16 26 Q20 29 24 26" stroke="#90A4AE" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="14.5" cy="24" r="1.5" fill="#CFD8DC"/>
+    <circle cx="25.5" cy="24" r="1.5" fill="#CFD8DC"/>
+    <circle cx="20" cy="10" r="3" fill="#90A4AE" opacity=".6"/>
+  </svg>`,
+};
+
+const CATS = [
+  {key:'food',label:'餐飲',color:'#FFB74D'},
+  {key:'transport',label:'交通',color:'#64B5F6'},
+  {key:'study',label:'學習',color:'#B39DDB'},
+  {key:'fun',label:'娛樂',color:'#FF8FAB'},
+  {key:'clothes',label:'服飾',color:'#4DB6AC'},
+  {key:'health',label:'健康',color:'#81C784'},
+  {key:'gift',label:'禮物',color:'#FF8A65'},
+  {key:'other',label:'其他',color:'#B0BEC5'},
+];
+const INC_CATS = [
+  {key:'allowance',label:'零用錢',color:'#CE93D8'},
+  {key:'parttime',label:'打工',color:'#66BB6A'},
+  {key:'gift_money',label:'紅包',color:'#FFD54F'},
+  {key:'other_inc',label:'其他',color:'#90A4AE'},
+];
+
+let txType='expense', selCat='food';
+let txData=JSON.parse(localStorage.getItem('teen_tx2')||'[]');
+let pieChart=null, barChart=null;
+
+function save(){localStorage.setItem('teen_tx2',JSON.stringify(txData));}
+function ym(d){return d.slice(0,7);}
+function todayYM(){return new Date().toISOString().slice(0,7);}
+function allMonths(){
+  const s=new Set(txData.map(t=>ym(t.date)));
+  s.add(todayYM());
+  return Array.from(s).sort().reverse();
+}
+function fmtMoney(n){return '$'+Math.round(n).toLocaleString();}
+function getCat(key){return [...CATS,...INC_CATS].find(c=>c.key===key)||{label:key,color:'#B0BEC5'};}
+
+function setType(t){
+  txType=t;
+  document.getElementById('btn-expense').className='type-btn expense'+(t==='expense'?' active':'');
+  document.getElementById('btn-income').className='type-btn income'+(t==='income'?' active':'');
+  document.getElementById('submit-btn').className='submit-btn '+t;
+  document.getElementById('submit-btn').textContent=t==='expense'?'記下這筆支出 🐹':'記下這筆收入 🐰';
+  const cats=t==='expense'?CATS:INC_CATS;
+  if(!cats.find(c=>c.key===selCat)) selCat=cats[0].key;
+  renderCats();
+}
+
+function renderCats(){
+  const cats=txType==='expense'?CATS:INC_CATS;
+  document.getElementById('cat-grid').innerHTML=cats.map(c=>`
+    <button class="cat-btn${selCat===c.key?' selected':''}" onclick="selCat='${c.key}';renderCats()">
+      ${SVGS[c.key]||''}
+      <span>${c.label}</span>
+    </button>`).join('');
+}
+
+function addTx(){
+  const amt=parseFloat(document.getElementById('inp-amount').value);
+  const desc=document.getElementById('inp-desc').value.trim()||getCat(selCat).label;
+  if(!amt||amt<=0){document.getElementById('inp-amount').focus();return;}
+  txData.unshift({id:Date.now(),type:txType,amount:amt,cat:selCat,desc,date:new Date().toISOString().slice(0,10)});
+  save();
+  document.getElementById('inp-amount').value='';
+  document.getElementById('inp-desc').value='';
+  updateMetrics();
+}
+
+function updateMetrics(){
+  const m=todayYM();
+  const mTx=txData.filter(t=>ym(t.date)===m);
+  const inc=mTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=mTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('m-income').textContent=fmtMoney(inc);
+  document.getElementById('m-expense').textContent=fmtMoney(exp);
+  const bal=inc-exp;
+  const bEl=document.getElementById('m-balance');
+  bEl.textContent=fmtMoney(bal);
+  bEl.style.color=bal>=0?'#43A047':'#0288D1';
+}
+
+function populateSelects(){
+  const months=allMonths();
+  ['list-month','stats-month'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value||months[0];
+    sel.innerHTML=months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${m.replace('-','年')}月</option>`).join('');
+  });
+}
+
+function renderList(){
+  const m=document.getElementById('list-month').value;
+  const el=document.getElementById('tx-list');
+  const filtered=txData.filter(t=>ym(t.date)===m);
+  if(!filtered.length){el.innerHTML='<div class="empty">這個月還沒有記帳喔 🐹</div>';return;}
+  el.innerHTML=filtered.map(t=>{
+    const cat=getCat(t.cat);
+    const amtColor=t.type==='income'?'#43A047':'#0288D1';
+    const sign=t.type==='income'?'+':'-';
+    return `<div class="tx-item">
+      <div class="tx-icon">${SVGS[t.cat]||''}</div>
+      <div class="tx-info">
+        <div class="tx-name">${t.desc}</div>
+        <div class="tx-meta">${t.date} · ${cat.label}</div>
+      </div>
+      <div class="tx-amount" style="color:${amtColor}">${sign}${fmtMoney(t.amount)}</div>
+      <button class="tx-del" onclick="delTx(${t.id})" aria-label="刪除">×</button>
+    </div>`;
+  }).join('');
+}
+
+function delTx(id){
+  txData=txData.filter(t=>t.id!==id);
+  save(); renderList(); updateMetrics();
+}
+
+function renderStats(){
+  const m=document.getElementById('stats-month').value;
+  const exp=txData.filter(t=>ym(t.date)===m&&t.type==='expense');
+  const bycat={};
+  exp.forEach(t=>{bycat[t.cat]=(bycat[t.cat]||0)+t.amount;});
+  const labels=Object.keys(bycat).map(k=>getCat(k).label);
+  const vals=Object.values(bycat).map(v=>Math.round(v));
+  const colors=Object.keys(bycat).map(k=>getCat(k).color);
+
+  if(pieChart) pieChart.destroy();
+  const pieCtx=document.getElementById('pie-chart');
+  if(vals.length){
+    pieChart=new Chart(pieCtx,{
+      type:'doughnut',
+      data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': $'+ctx.parsed.toLocaleString()}}}}
+    });
+    const total=vals.reduce((a,b)=>a+b,0);
+    document.getElementById('pie-legend').innerHTML=Object.keys(bycat).map((k,i)=>`
+      <span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${labels[i]} ${Math.round(vals[i]/total*100)}%</span>`).join('');
+  } else {
+    document.getElementById('pie-legend').innerHTML='<span style="color:#BCAAA4;font-size:13px">這個月沒有支出紀錄 🐰</span>';
+  }
+
+  const months=[];
+  for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7));}
+  const incArr=months.map(mo=>Math.round(txData.filter(t=>ym(t.date)===mo&&t.type==='income').reduce((s,t)=>s+t.amount,0)));
+  const expArr=months.map(mo=>Math.round(txData.filter(t=>ym(t.date)===mo&&t.type==='expense').reduce((s,t)=>s+t.amount,0)));
+
+  if(barChart) barChart.destroy();
+  barChart=new Chart(document.getElementById('bar-chart'),{
+    type:'bar',
+    data:{labels:months.map(m=>m.slice(5)+'月'),datasets:[
+      {label:'收入',data:incArr,backgroundColor:'#A5D6A7',borderRadius:6},
+      {label:'支出',data:expArr,backgroundColor:'#81D4FA',borderRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{color:'#8D6E63',font:{size:12,family:'Nunito'}}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#8D6E63',font:{size:12,family:'Nunito'},callback:v=>'$'+v.toLocaleString()}}
+    }}
+  });
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['add','list','stats'][i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+t).classList.add('active');
+  populateSelects();
+  if(t==='list') renderList();
+  if(t==='stats') renderStats();
+}
+
+renderCats();
+updateMetrics();
+populateSelects();
+</script>
+</body>
+</html>
